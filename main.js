@@ -57,125 +57,26 @@ define(function (require, exports, module) {
         
     }
     
-    /**
-     * get the whitespace characters from line start to beginning of function def
-     * @param string input lines from start of the function definition
-     * @param string match function definition start
-     */
-    function getPrefix(input, match) {
-        
-        var indexOf = input.indexOf(match),
-            prefix  = "";
-        if (indexOf !== -1) {
-            prefix = input.substr(0, indexOf).replace(/[^\s\n]/g, ' ');
-        }
-        
-        return prefix;
-        
-    }
-    
-    function getTarget() {
-        
-        var editor = EditorManager.getCurrentFullEditor(),
-            pos    = editor.getCursorPos(),
-            functionDeclarationRegex = new RegExp('^[a-z0-9]*\\s*\\n*\\bfunction\\b\\s*' + REGEX_PATTERNS.jsVariable + '\\s*\\(\\s*(' +
-                                                  REGEX_PATTERNS.jsVariable + '\\s*,?)*\\s*\\)','g'),
-
-            functionExpresionRegex = new RegExp('^[a-z0-9]*\\s*\\n*(var|'+ REGEX_PATTERNS.jsVariable + '.)?\\s*'+ REGEX_PATTERNS.jsVariable + '\\s*=\\s*function\\s*\\(\\s*(' +
-                                                REGEX_PATTERNS.jsVariable + '\\s*(,\\s*)?)*\\s*\\)\\s*','g');
-
-        pos.ch = 0;
- 
-        // Take the text of the document, starting with the current cursor line
-        var txtFrom = editor._codeMirror.getRange(pos, {line: editor._codeMirror.lineCount() });
-        
-        //checks if there is a return value
-        var returnsValue = txtFrom.substr( txtFrom.indexOf('{'), txtFrom.indexOf('}')).search('return') !== -1;
-        
-        txtFrom = txtFrom.substr(0, txtFrom.indexOf("{"));
-
-        //take any comment off
-        txtFrom = txtFrom.replace(new RegExp(REGEX_PATTERNS.comment,'g'), '');
-        
-        var results = txtFrom.match(new RegExp(REGEX_PATTERNS.jsVariable,'g'));
-        switch(true) {
-        case functionExpresionRegex.test(txtFrom):
-            return {
-                //check for 'var'
-                name:results[results.indexOf('function')-1],
-                params:results.slice(results.indexOf('function')+1),
-                prefix: getPrefix(txtFrom, results[0]),
-                returnsValue:returnsValue
-            };
-        case functionDeclarationRegex.test(txtFrom):
-            //console.log(results[1]);
-            return {
-                name:results[1],
-                params:results.slice(2),
-                prefix: getPrefix(txtFrom, results[0]),
-                returnsValue:returnsValue
-            };
-        default:
-            return null;
-        }
-    }
-    
     
     /**
      * Generate comment block
-     * @param string fname function name
-     * @param string params function parameters
-     * @param string prefix whitespace prefix for comment block lines
      */
-    function generateComment(fname, params,returnsValue, prefix) {
+    function generateComment() {
         
         var output = [];
         output.push("/**");
-                
-        // Assume function is private if it starts with an underscore
-        if (fname.charAt(0) === "_") {
-            output.push(" * @private");
-        }
-        
-        // Add description
         output.push(" * Description");
-        
-        // Add parameters
-        if (params.length > 0) {
-            var i;
-            for (i = 0; i < params.length; i++) {
-                var param = params[i];
-                output.push(" * @param {type} " + param + " Description");
-            }
-        }
-        
-        if (returnsValue) output.push(" * @returns {type} Description");
-
-        // TODO use if 'return' is found in the function body?
-        //output += " * @return {type} ???\n";
+        output.push(" * ");
+        output.push(" * @param {type} {name} Description");
+        output.push(" * @returns {type} Description");
+        output.push(" * @return {type} ???\n");
         output.push(" */");
         
-        return prefix + output.join("\n" + prefix) + "\n";
-    }
-
-    
-    
-    function annotate() {
-        
-        var target = getTarget();
-        
-        if (target === null) {
-            window.alert(EMPTY_MSG);
-            return;
-        }
-        
-        var comment = generateComment(target.name, target.params, target.returnsValue, target.prefix);
-        
-        insert(comment);
+        insert(output.join("\n") + "\n");
     }
 
 
-    CommandManager.register(MENU_NAME, COMMAND_ID, annotate);
+    CommandManager.register(MENU_NAME, COMMAND_ID, generateComment);
     KeyBindingManager.addBinding(COMMAND_ID, "Ctrl-Alt-A");
 
     var menu = Menus.getMenu(Menus.AppMenuBar.EDIT_MENU);
