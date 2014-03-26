@@ -67,9 +67,9 @@ define(function (require, exports, module) {
         output.push("/**");
         output.push(" * Description");
         output.push(" * ");
-        output.push(" * @param {type} {name} Description");
-        output.push(" * @returns {type} Description");
-        output.push(" * @return {type} ???\n");
+        output.push(" * @param type name Description");
+        output.push(" * @returns type Description");
+        output.push(" * @return type Description\n");
         output.push(" */");
         
         insert(output.join("\n") + "\n");
